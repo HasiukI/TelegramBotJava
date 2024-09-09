@@ -15,4 +15,9 @@ public class Account {
 
     @Column(nullable = false)
     private String account;
+
+    public Account(Long userId, String account){
+        this.userId=userId;
+        this.account=account;
+    }
 }

@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.List;
+import java.util.*;
 
 @Service
 public class MonobankApiService {
@@ -30,40 +30,38 @@ public class MonobankApiService {
         this.userService=userService;
     }
 
-    public String checkMyProfil(){
-//        HttpHeaders headers = new HttpHeaders();
-//        headers.set("X-Token","");
-//
-//        HttpEntity<String> entity = new HttpEntity<>(headers);
-//
-//        ResponseEntity<String> response = restTemplate.exchange(
-//                config.getApiMono() +"personal/client-info",
-//                HttpMethod.GET,
-//                entity,
-//                String.class
-//        );
-//
-//        JSONObject accountsJson = new JSONObject(response.getBody());
-//        JSONArray accountsArray = accountsJson.getJSONArray("accounts");
-//
-//        String result = "На вашому рахунку:\n";
-//
-//        for(int i=0;i<accountsArray.length();i++){
-//            String balance = String.valueOf(accountsArray.getJSONObject(i).getInt("balance"));
-//
-//            if(balance.length()>=3){
-//                int position = balance.length() - 2;
-//                balance = balance.substring(0, position) + "," + balance.substring(position);
-//            }
-//
-//            result += i+1+". Баланс: " + balance + " "+ accountsArray.getJSONObject(i).getString("cashbackType") + ";\n";
-//        }
-//
-//        return result;
+    public String checkMyBalance(String token){
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-Token", token);
 
-        List<User> users= userService.getAllUsers();
-        return "";
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<String> response = restTemplate.exchange(
+                config.getApiMono() + "personal/client-info",
+                HttpMethod.GET,
+                entity,
+                String.class
+        );
+
+        JSONObject accountsJson = new JSONObject(response.getBody());
+        JSONArray accountsArray = accountsJson.getJSONArray("accounts");
+
+        String result = "На вашому рахунку:\n";
+
+        for (int i = 0; i < accountsArray.length(); i++) {
+            String balance = String.valueOf(accountsArray.getJSONObject(i).getInt("balance"));
+
+            if (balance.length() >= 3) {
+                int position = balance.length() - 2;
+                balance = balance.substring(0, position) + "," + balance.substring(position);
+            }
+
+            result += i + 1 + ". Баланс: " + balance + " " + accountsArray.getJSONObject(i).getString("cashbackType") + ";\n";
+        }
+
+        return result;
     }
+
 
     public String GetTransaction(){
         List<User> users= userService.getAllUsers();
@@ -86,4 +84,34 @@ public class MonobankApiService {
 
         return "";
     }
+
+    public List<String> getAccounts(String token){
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-Token",token);
+
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<String> response = restTemplate.exchange(
+                config.getApiMono() +"personal/client-info",
+                HttpMethod.GET,
+                entity,
+                String.class
+        );
+
+        if(response.getStatusCode().value() != 200){
+            return null;
+        }
+        JSONObject accountsJson = new JSONObject(response.getBody());
+        JSONArray accountsArray = accountsJson.getJSONArray("accounts");
+
+        List<String> accounts = new ArrayList<>();
+
+        for(int i=0;i<accountsArray.length();i++){
+            String accountId = String.valueOf(accountsArray.getJSONObject(i).getString("id"));
+            accounts.add(accountId);
+        }
+
+        return accounts;
+    }
+
 }
