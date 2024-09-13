@@ -27,10 +27,14 @@ public class User {
     @Column(nullable = false)
     private String token;
 
-    public User(String name, long chatId, String token) {
+    @Column(nullable = false)
+    private Boolean isActiveCoach;
+
+    public User(String name, long chatId, String token, Boolean isActiveCoach) {
         this.name=name;
         this.chatId=chatId;
         this.token= token;
+        this.isActiveCoach=isActiveCoach;
     }
 
     public User(){}

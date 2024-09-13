@@ -1,6 +1,7 @@
 package com.example.SpringSpringBot.service;
 
 import com.example.SpringSpringBot.config.AppConfig;
+import com.example.SpringSpringBot.model.Account;
 import com.example.SpringSpringBot.model.User;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -14,6 +15,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 @Service
@@ -63,27 +66,7 @@ public class MonobankApiService {
     }
 
 
-    public String GetTransaction(){
-        List<User> users= userService.getAllUsers();
-//        HttpHeaders headers = new HttpHeaders();
-//        headers.set("X-Token","");
-//
-//        HttpEntity<String> entity = new HttpEntity<>(headers);
-//
-//        ResponseEntity<String> response = restTemplate.exchange(
-//                config.getApiMono() +"personal/client-info",
-//                HttpMethod.GET,
-//                entity,
-//                String.class
-//        );
-//
-//        JSONObject accountsJson = new JSONObject(response.getBody());
-//        JSONArray accountsArray = accountsJson.getJSONArray("accounts");
 
-
-
-        return "";
-    }
 
     public List<String> getAccounts(String token){
         HttpHeaders headers = new HttpHeaders();
@@ -107,11 +90,61 @@ public class MonobankApiService {
         List<String> accounts = new ArrayList<>();
 
         for(int i=0;i<accountsArray.length();i++){
-            String accountId = String.valueOf(accountsArray.getJSONObject(i).getString("id"));
-            accounts.add(accountId);
+            if(!accountsArray.getJSONObject(i).getString("type").equals("eAid")){
+                String accountId = String.valueOf(accountsArray.getJSONObject(i).getString("id"));
+                accounts.add(accountId);
+            }
         }
 
         return accounts;
     }
 
+    public Long getTimeLastAction(String token,String accountId){
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-Token",token);
+
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        long unixTo = Instant.now().getEpochSecond();
+        Instant oneDayAgo =  Instant.now().minus(20, ChronoUnit.DAYS);
+        long unixFrom = oneDayAgo.getEpochSecond();
+
+        ResponseEntity<String> response = restTemplate.exchange(
+                config.getApiMono() +"personal/statement/" + accountId + "/"+ unixFrom+ "/"+unixTo,
+                HttpMethod.GET,
+                entity,
+                String.class
+        );
+
+        JSONArray accountsJson = new JSONArray(response.getBody());
+
+        if(accountsJson.isEmpty()){
+            return 0L;
+        }
+        return accountsJson.getJSONObject(0).getLong("time");
+    }
+
+    public Long getLastAction(String token, Account account){
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-Token",token);
+
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        long unixTo = Instant.now().getEpochSecond();
+
+        ResponseEntity<String> response = restTemplate.exchange(
+                config.getApiMono() +"personal/statement/" + account.getAccount() + "/"+ account.getLastAction()+ "/"+unixTo,
+                HttpMethod.GET,
+                entity,
+                String.class
+        );
+
+        JSONArray accountsJson = new JSONArray(response.getBody());
+
+        if(accountsJson.length()>1){
+            return accountsJson.getJSONObject(0).getLong("amount");
+        }
+        return 0L;
+
+    }
 }

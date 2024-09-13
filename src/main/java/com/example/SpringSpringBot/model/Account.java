@@ -1,8 +1,10 @@
 package com.example.SpringSpringBot.model;
 
 import jakarta.persistence.*;
+import lombok.Getter;
 
 @Entity
+@Getter
 @Table(name = "accounts")
 public class Account {
 
@@ -16,8 +18,13 @@ public class Account {
     @Column(nullable = false)
     private String account;
 
-    public Account(Long userId, String account){
+    @Column(nullable = false)
+    private Long lastAction;
+
+    public Account(Long userId, String account,Long lastAction){
         this.userId=userId;
         this.account=account;
+        this.lastAction=lastAction;
     }
+    public Account(){}
 }
